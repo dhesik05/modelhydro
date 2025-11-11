@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamil Nadu Groundwater Predictor - Geological Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2E8B57, #228B22);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .location-btn {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .location-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+        
+        .location-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .map-toggle {
+            display: flex;
+            background: white;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .toggle-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .toggle-btn.active {
+            background: #2E8B57;
+            color: white;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 0;
+            min-height: 700px;
+        }
+        
+        .map-section {
+            position: relative;
+            background: #f8f9fa;
+            padding: 30px;
+        }
+        
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            border: 3px solid #2196F3;
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        
+        .tn-map {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: all 0.5s ease;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 2px;
+            background: #2c3e50;
+            padding: 10px;
+        }
+        
+        .puzzle-piece {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            border: 2px solid #34495e;
+            overflow: hidden;
+        }
+        
+        .puzzle-piece:hover {
+            transform: scale(1.05) rotate(2deg);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+            z-index: 10;
+        }
+        
+        .puzzle-piece.revealed {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            animation: revealPulse 0.6s ease;
+        }
+        
+        .puzzle-piece.high-water {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        
+        .puzzle-piece.medium-water {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+        
+        .puzzle-piece.low-water {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .puzzle-piece.geological {
+            opacity: 0.9;
+        }
+        
+        .puzzle-piece.geological.sedimentary {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+        }
+        
+        .puzzle-piece.geological.alluvial {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+        
+        .puzzle-piece.geological.crystalline {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        
+        .puzzle-piece.geological.igneous {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .puzzle-piece.geological.metamorphic {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+        
+        @keyframes revealPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .piece-content {
+            text-align: center;
+            font-size: 0.8rem;
+            padding: 5px;
+        }
+        
+        .piece-icon {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .piece-label {
+            font-size: 0.7rem;
+            opacity: 0.9;
+        }
+        
+        .topographic-map {
+            background: #2c3e50;
+        }
+        
+        .geological-map {
+            background: #34495e;
+        }
+        
+        .geological-layer {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+        
+        .sedimentary {
+            background: radial-gradient(circle, #FFE082, #FFC107);
+        }
+        
+        .igneous {
+            background: radial-gradient(circle, #FFAB91, #FF5722);
+        }
+        
+        .metamorphic {
+            background: radial-gradient(circle, #CE93D8, #9C27B0);
+        }
+        
+        .alluvial {
+            background: radial-gradient(circle, #A5D6A7, #4CAF50);
+        }
+        
+        .crystalline {
+            background: radial-gradient(circle, #90CAF9, #2196F3);
+        }
+        
+        .district {
+            position: absolute;
+            background: rgba(76, 175, 80, 0.8);
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 5px 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 5;
+        }
+        
+        .district:hover {
+            background: rgba(76, 175, 80, 1);
+            transform: scale(1.05);
+        }
+        
+        .prediction-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+            z-index: 10;
+        }
+        
+        .puzzle-piece.current-location {
+            border: 4px solid #FF1744;
+            box-shadow: 0 0 0 4px rgba(255, 23, 68, 0.3), 0 8px 25px rgba(255, 23, 68, 0.4);
+            animation: locationPulse 1.5s infinite;
+        }
+        
+        .puzzle-piece.current-location::after {
+            content: '📍';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 1.2rem;
+            background: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        @keyframes locationPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 3px rgba(255, 23, 68, 0.3); }
+            50% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(255, 23, 68, 0.1); }
+            100% { transform: scale(1); box-shadow: 0 0 0 3px rgba(255, 23, 68, 0.3); }
+        }
+        
+        .high-water { background: #2196F3; }
+        .medium-water { background: #FF9800; }
+        .low-water { background: #F44336; }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .sidebar {
+            background: #f5f5f5;
+            padding: 30px;
+            border-left: 1px solid #e0e0e0;
+            overflow-y: auto;
+        }
+        
+        .prediction-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .prediction-card h3 {
+            color: #2E8B57;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .coordinates {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-family: monospace;
+        }
+        
+        .prediction-result {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .high-probability {
+            background: linear-gradient(135deg, #4CAF50, #81C784);
+            color: white;
+        }
+        
+        .medium-probability {
+            background: linear-gradient(135deg, #FF9800, #FFB74D);
+            color: white;
+        }
+        
+        .low-probability {
+            background: linear-gradient(135deg, #F44336, #EF5350);
+            color: white;
+        }
+        
+        .geological-info {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #FF9800;
+        }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .legend {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .legend h4 {
+            color: #2E8B57;
+            margin-bottom: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .geological-legend {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .location-status {
+            background: #fff;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-left: auto;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .map-container {
+                height: 400px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌊 Tamil Nadu Groundwater Predictor</h1>
+            <p>AI-powered groundwater detection with geological analysis and live location</p>
+        </div>
+        
+        <div class="controls">
+            <button class="location-btn" id="locationBtn">
+                📍 Get My Location
+            </button>
+            
+            <div class="map-toggle">
+                <button class="toggle-btn active" data-map="topographic">🗺️ Topographic</button>
+                <button class="toggle-btn" data-map="geological">🪨 Geological</button>
+            </div>
+            
+            <div class="location-status" id="locationStatus">
+                Click "Get My Location" to use GPS
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="map-section">
+                <div class="instructions">
+                    <strong>📍 How to use:</strong> Use your live location or click anywhere on the map to predict groundwater availability. Toggle between topographic and geological views.
+                </div>
+                
+                <div class="map-container" id="mapContainer">
+                    <div class="tn-map topographic-map" id="tnMap">
+                        <!-- Puzzle pieces representing Tamil Nadu regions -->
+                        <div class="puzzle-piece" data-region="North Chennai" data-lat="13.2" data-lng="80.2" data-geology="alluvial">
+                            <div class="piece-content">
+                                <span class="piece-icon">🏙️</span>
+                                <div class="piece-label">N.Chennai</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Vellore" data-lat="12.9" data-lng="79.1" data-geology="crystalline">
+                            <div class="piece-content">
+                                <span class="piece-icon">⛰️</span>
+                                <div class="piece-label">Vellore</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Kanchipuram" data-lat="12.8" data-lng="79.7" data-geology="sedimentary">
+                            <div class="piece-content">
+                                <span class="piece-icon">🏛️</span>
+                                <div class="piece-label">Kanchi</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Cuddalore" data-lat="11.7" data-lng="79.8" data-geology="alluvial">
+                            <div class="piece-content">
+                                <span class="piece-icon">🌊</span>
+                                <div class="piece-label">Cuddalore</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Pondicherry" data-lat="11.9" data-lng="79.8" data-geology="alluvial">
+                            <div class="piece-content">
+                                <span class="piece-icon">🏖️</span>
+                                <div class="piece-label">Pondy</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Villupuram" data-lat="11.9" data-lng="79.5" data-geology="sedimentary">
+                            <div class="piece-content">
+                                <span class="piece-icon">🌾</span>
+                                <div class="piece-label">Villupuram</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Salem" data-lat="11.7" data-lng="78.1" data-geology="metamorphic">
+                            <div class="piece-content">
+                                <span class="piece-icon">🏭</span>
+                                <div class="piece-label">Salem</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Dharmapuri" data-lat="12.1" data-lng="78.2" data-geology="igneous">
+                            <div class="piece-content">
+                                <span class="piece-icon">🌄</span>
+                                <div class="piece-label">Dharmap.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Krishnagiri" data-lat="12.5" data-lng="78.2" data-geology="igneous">
+                            <div class="piece-content">
+                                <span class="piece-icon">🗻</span>
+                                <div class="piece-label">Krishna.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Vellore South" data-lat="12.6" data-lng="79.0" data-geology="crystalline">
+                            <div class="piece-content">
+                                <span class="piece-icon">💎</span>
+                                <div class="piece-label">S.Vellore</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Tiruvannamalai" data-lat="12.2" data-lng="79.1" data-geology="crystalline">
+                            <div class="piece-content">
+                                <span class="piece-icon">🕉️</span>
+                                <div class="piece-label">T.malai</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Chennai South" data-lat="12.8" data-lng="80.2" data-geology="alluvial">
+                            <div class="piece-content">
+                                <span class="piece-icon">🏙️</span>
+                                <div class="piece-label">S.Chennai</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Erode" data-lat="11.3" data-lng="77.7" data-geology="metamorphic">
+                            <div class="piece-content">
+                                <span class="piece-icon">🧵</span>
+                                <div class="piece-label">Erode</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Namakkal" data-lat="11.2" data-lng="78.2" data-geology="crystalline">
+                            <div class="piece-content">
+                                <span class="piece-icon">🧂</span>
+                                <div class="piece-label">Namakkal</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Trichy" data-lat="10.8" data-lng="78.7" data-geology="sedimentary">
+                            <div class="piece-content">
+                                <span class="piece-icon">🏰</span>
+                                <div class="piece-label">Trichy</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Perambalur" data-lat="11.2" data-lng="78.9" data-geology="sedimentary">
+                            <div class="piece-content">
+                                <span class="piece-icon">🏺</span>
+                                <div class="piece-label">Peramb.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Ariyalur" data-lat="11.1" data-lng="79.1" data-geology="sedimentary">
+                            <div class="piece-content">
+                                <span class="piece-icon">🦕</span>
+                                <div class="piece-label">Ariyalur</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Thanjavur" data-lat="10.8" data-lng="79.1" data-geology="alluvial">
+                            <div class="piece-content">
+                                <span class="piece-icon">🌾</span>
+                                <div class="piece-label">Thanjavur</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Coimbatore" data-lat="11.0" data-lng="76.9" data-geology="igneous">
+                            <div class="piece-content">
+                                <span class="piece-icon">🏭</span>
+                                <div class="piece-label">Coimbat.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Karur" data-lat="10.9" data-lng="78.1" data-geology="metamorphic">
+                            <div class="piece-content">
+                                <span class="piece-icon">💍</span>
+                                <div class="piece-label">Karur</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Pudukottai" data-lat="10.4" data-lng="78.8" data-geology="sedimentary">
+                            <div class="piece-content">
+                                <span class="piece-icon">🏛️</span>
+                                <div class="piece-label">Pudukot.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Nagapattinam" data-lat="10.8" data-lng="79.8" data-geology="alluvial">
+                            <div class="piece-content">
+                                <span class="piece-icon">🐍</span>
+                                <div class="piece-label">Nagapat.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Tirupur" data-lat="11.1" data-lng="77.3" data-geology="metamorphic">
+                            <div class="piece-content">
+                                <span class="piece-icon">👕</span>
+                                <div class="piece-label">Tirupur</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Dindigul" data-lat="10.4" data-lng="77.9" data-geology="igneous">
+                            <div class="piece-content">
+                                <span class="piece-icon">🏔️</span>
+                                <div class="piece-label">Dindigul</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Madurai" data-lat="9.9" data-lng="78.1" data-geology="crystalline">
+                            <div class="piece-content">
+                                <span class="piece-icon">🕌</span>
+                                <div class="piece-label">Madurai</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Sivaganga" data-lat="9.8" data-lng="78.5" data-geology="sedimentary">
+                            <div class="piece-content">
+                                <span class="piece-icon">⚔️</span>
+                                <div class="piece-label">Sivagan.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Ramanathapuram" data-lat="9.4" data-lng="78.8" data-geology="sedimentary">
+                            <div class="piece-content">
+                                <span class="piece-icon">🌉</span>
+                                <div class="piece-label">Ramanat.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Theni" data-lat="10.0" data-lng="77.5" data-geology="igneous">
+                            <div class="piece-content">
+                                <span class="piece-icon">🍯</span>
+                                <div class="piece-label">Theni</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Virudhunagar" data-lat="9.6" data-lng="77.9" data-geology="metamorphic">
+                            <div class="piece-content">
+                                <span class="piece-icon">🎆</span>
+                                <div class="piece-label">Virudhu.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="puzzle-piece" data-region="Tirunelveli" data-lat="8.7" data-lng="77.7" data-geology="crystalline">
+                            <div class="piece-content">
+                                <span class="piece-icon">🌾</span>
+                                <div class="piece-label">T.nelveli</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="prediction-card">
+                    <h3>🎯 Prediction Results</h3>
+                    <div id="predictionContent">
+                        <p style="text-align: center; color: #666; padding: 40px 0;">
+                            Use your live location or click on the map to get groundwater prediction
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <h4>🗺️ Water Probability</h4>
+                    <div class="legend-item">
+                        <div class="legend-color high-water"></div>
+                        <span>High Probability (>70%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color medium-water"></div>
+                        <span>Medium Probability (40-70%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color low-water"></div>
+                        <span>Low Probability (<40%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF1744;"></div>
+                        <span>Your Current Location</span>
+                    </div>
+                </div>
+                
+                <div class="geological-legend">
+                    <h4>🪨 Geological Formations</h4>
+                    <div class="legend-item">
+                        <div class="legend-color sedimentary"></div>
+                        <span>Sedimentary (Good water retention)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color alluvial"></div>
+                        <span>Alluvial (Excellent for wells)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color crystalline"></div>
+                        <span>Crystalline (Moderate potential)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color igneous"></div>
+                        <span>Igneous (Low permeability)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color metamorphic"></div>
+                        <span>Metamorphic (Variable)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced groundwater data with geological information
+        const groundwaterData = [
+            {lat: 11.0, lng: 79.8, probability: 85, depth: 15, quality: "Good", geology: "Alluvial", porosity: "High"},
+            {lat: 10.8, lng: 78.7, probability: 78, depth: 20, quality: "Excellent", geology: "Sedimentary", porosity: "High"},
+            {lat: 11.4, lng: 79.7, probability: 82, depth: 18, quality: "Good", geology: "Alluvial", porosity: "High"},
+            {lat: 9.9, lng: 78.1, probability: 75, depth: 25, quality: "Good", geology: "Sedimentary", porosity: "Medium"},
+            {lat: 11.7, lng: 78.1, probability: 65, depth: 35, quality: "Fair", geology: "Crystalline", porosity: "Medium"},
+            {lat: 10.4, lng: 77.7, probability: 58, depth: 40, quality: "Fair", geology: "Metamorphic", porosity: "Low"},
+            {lat: 12.2, lng: 79.1, probability: 62, depth: 30, quality: "Good", geology: "Crystalline", porosity: "Medium"},
+            {lat: 12.5, lng: 77.9, probability: 35, depth: 60, quality: "Poor", geology: "Igneous", porosity: "Very Low"},
+            {lat: 9.2, lng: 77.5, probability: 28, depth: 80, quality: "Poor", geology: "Igneous", porosity: "Very Low"},
+            {lat: 11.9, lng: 77.2, probability: 32, depth: 70, quality: "Fair", geology: "Metamorphic", porosity: "Low"}
+        ];
+
+        let currentLocationMarker = null;
+        let isGeologicalView = false;
+
+        // Geological formation impact on groundwater
+        const geologicalImpact = {
+            "Alluvial": { multiplier: 1.3, description: "Excellent water retention and permeability" },
+            "Sedimentary": { multiplier: 1.2, description: "Good water storage capacity" },
+            "Crystalline": { multiplier: 1.0, description: "Moderate groundwater potential" },
+            "Metamorphic": { multiplier: 0.8, description: "Variable water availability" },
+            "Igneous": { multiplier: 0.6, description: "Low permeability, limited groundwater" }
+        };
+
+        // Enhanced ML model with geological factors
+        function predictGroundwater(lat, lng) {
+            let minDistance = Infinity;
+            let nearestPoint = null;
+            
+            groundwaterData.forEach(point => {
+                const distance = Math.sqrt(
+                    Math.pow(lat - point.lat, 2) + Math.pow(lng - point.lng, 2)
+                );
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestPoint = point;
+                }
+            });
+            
+            // Determine geological formation based on location
+            const geology = determineGeology(lat, lng);
+            const geoImpact = geologicalImpact[geology];
+            
+            const baseProb = nearestPoint ? nearestPoint.probability : 50;
+            const geologicalAdjustment = baseProb * (geoImpact.multiplier - 1);
+            const randomFactor = (Math.random() - 0.5) * 15;
+            const probability = Math.max(10, Math.min(95, baseProb + geologicalAdjustment + randomFactor));
+            
+            const depth = nearestPoint ? nearestPoint.depth + (Math.random() - 0.5) * 20 : 30 + Math.random() * 50;
+            const qualities = ["Excellent", "Good", "Fair", "Poor"];
+            const quality = probability > 70 ? qualities[Math.floor(Math.random() * 2)] : 
+                           probability > 40 ? qualities[1 + Math.floor(Math.random() * 2)] : 
+                           qualities[2 + Math.floor(Math.random() * 2)];
+            
+            return {
+                probability: Math.round(probability),
+                depth: Math.round(depth),
+                quality: quality,
+                geology: geology,
+                geologicalDescription: geoImpact.description,
+                confidence: Math.round(60 + Math.random() * 35)
+            };
+        }
+
+        // Determine geological formation based on coordinates
+        function determineGeology(lat, lng) {
+            // Simplified geological mapping for Tamil Nadu
+            if (lng > 79.5 && lat > 10.5) return "Alluvial"; // Coastal plains
+            if (lng > 78.5 && lat < 10.0) return "Sedimentary"; // Southern regions
+            if (lng < 77.5 && lat > 11.5) return "Igneous"; // Western ghats
+            if (lng < 78.0 && lat < 11.0) return "Metamorphic"; // Central highlands
+            return "Crystalline"; // Default for most of Tamil Nadu
+        }
+
+        // Convert screen coordinates to lat/lng
+        function screenToLatLng(x, y, mapRect) {
+            const tnBounds = {
+                north: 13.5,
+                south: 8.0,
+                east: 80.3,
+                west: 76.2
+            };
+            
+            const relativeX = (x - mapRect.left) / mapRect.width;
+            const relativeY = (y - mapRect.top) / mapRect.height;
+            
+            const lng = tnBounds.west + (relativeX * (tnBounds.east - tnBounds.west));
+            const lat = tnBounds.north - (relativeY * (tnBounds.north - tnBounds.south));
+            
+            return {lat: lat, lng: lng};
+        }
+
+        // Convert lat/lng to screen coordinates
+        function latLngToScreen(lat, lng, mapRect) {
+            const tnBounds = {
+                north: 13.5,
+                south: 8.0,
+                east: 80.3,
+                west: 76.2
+            };
+            
+            const relativeX = (lng - tnBounds.west) / (tnBounds.east - tnBounds.west);
+            const relativeY = (tnBounds.north - lat) / (tnBounds.north - tnBounds.south);
+            
+            return {
+                x: relativeX * 100,
+                y: relativeY * 100
+            };
+        }
+
+        // Display prediction results
+        function displayPrediction(lat, lng, prediction, isCurrentLocation = false) {
+            const predictionContent = document.getElementById('predictionContent');
+            
+            let probabilityClass = 'low-probability';
+            let waterIcon = '💧';
+            let recommendation = 'Consider alternative water sources or deeper drilling.';
+            
+            if (prediction.probability > 70) {
+                probabilityClass = 'high-probability';
+                waterIcon = '🌊';
+                recommendation = 'Excellent location for groundwater extraction!';
+            } else if (prediction.probability > 40) {
+                probabilityClass = 'medium-probability';
+                waterIcon = '💦';
+                recommendation = 'Moderate potential. Consider soil testing before drilling.';
+            }
+            
+            const locationText = isCurrentLocation ? 
+                `<div style="background: #ffebee; padding: 10px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #f44336;">
+                    <strong>📍 Your Current Location</strong>
+                </div>` : '';
+            
+            predictionContent.innerHTML = `
+                ${locationText}
+                <div class="coordinates">
+                    <strong>📍 Coordinates:</strong><br>
+                    Latitude: ${lat.toFixed(4)}°<br>
+                    Longitude: ${lng.toFixed(4)}°
+                </div>
+                
+                <div class="prediction-result ${probabilityClass}">
+                    ${waterIcon} ${prediction.probability}% Probability
+                </div>
+                
+                <div class="geological-info">
+                    <strong>🪨 Geological Formation:</strong> ${prediction.geology}<br>
+                    <small>${prediction.geologicalDescription}</small>
+                </div>
+                
+                <div style="margin: 15px 0;">
+                    <strong>Model Confidence:</strong>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${prediction.confidence}%; background: linear-gradient(90deg, #4CAF50, #81C784);"></div>
+                    </div>
+                    <small>${prediction.confidence}% confident</small>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <div style="margin-bottom: 8px;"><strong>🕳️ Expected Depth:</strong> ${prediction.depth}m</div>
+                    <div style="margin-bottom: 8px;"><strong>💧 Water Quality:</strong> ${prediction.quality}</div>
+                </div>
+                
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3;">
+                    <strong>💡 Recommendation:</strong><br>
+                    ${recommendation}
+                </div>
+            `;
+        }
+
+        // Get user's current location
+        function getCurrentLocation() {
+            const locationBtn = document.getElementById('locationBtn');
+            const locationStatus = document.getElementById('locationStatus');
+            
+            if (!navigator.geolocation) {
+                locationStatus.textContent = 'Geolocation not supported';
+                return;
+            }
+            
+            locationBtn.disabled = true;
+            locationBtn.innerHTML = '⏳ Getting Location...';
+            locationStatus.textContent = 'Requesting location access...';
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // Check if location is within Tamil Nadu bounds (approximate)
+                    if (lat < 8.0 || lat > 13.5 || lng < 76.2 || lng > 80.3) {
+                        locationStatus.textContent = 'Location outside Tamil Nadu';
+                        locationBtn.disabled = false;
+                        locationBtn.innerHTML = '📍 Get My Location';
+                        alert('Your location appears to be outside Tamil Nadu. The prediction may be less accurate.');
+                    } else {
+                        locationStatus.textContent = `Located: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                    }
+                    
+                    // Find the closest puzzle piece to current location
+                    const puzzlePieces = document.querySelectorAll('.puzzle-piece');
+                    let closestPiece = null;
+                    let minDistance = Infinity;
+                    
+                    puzzlePieces.forEach(piece => {
+                        const pieceLat = parseFloat(piece.dataset.lat);
+                        const pieceLng = parseFloat(piece.dataset.lng);
+                        const distance = Math.sqrt(
+                            Math.pow(lat - pieceLat, 2) + Math.pow(lng - pieceLng, 2)
+                        );
+                        
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closestPiece = piece;
+                        }
+                    });
+                    
+                    // Remove existing current location marker
+                    if (currentLocationMarker) {
+                        currentLocationMarker.classList.remove('current-location');
+                    }
+                    
+                    // Mark closest piece as current location
+                    if (closestPiece) {
+                        currentLocationMarker = closestPiece;
+                        closestPiece.classList.add('current-location');
+                        closestPiece.title = 'Your Current Location - ' + closestPiece.dataset.region;
+                    }
+                    
+                    // Get prediction for current location
+                    const prediction = predictGroundwater(lat, lng);
+                    displayPrediction(lat, lng, prediction, true);
+                    
+                    locationBtn.disabled = false;
+                    locationBtn.innerHTML = '📍 Update Location';
+                },
+                (error) => {
+                    let errorMessage = 'Location access denied';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = 'Location access denied';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = 'Location unavailable';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = 'Location request timeout';
+                            break;
+                    }
+                    
+                    locationStatus.textContent = errorMessage;
+                    locationBtn.disabled = false;
+                    locationBtn.innerHTML = '📍 Get My Location';
+                }
+            );
+        }
+
+        // Toggle between map views
+        function toggleMapView(mapType) {
+            const tnMap = document.getElementById('tnMap');
+            const puzzlePieces = document.querySelectorAll('.puzzle-piece');
+            const toggleBtns = document.querySelectorAll('.toggle-btn');
+            
+            toggleBtns.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (mapType === 'geological') {
+                tnMap.className = 'tn-map geological-map';
+                puzzlePieces.forEach(piece => {
+                    const geology = piece.dataset.geology;
+                    piece.classList.add('geological', geology);
+                });
+                isGeologicalView = true;
+            } else {
+                tnMap.className = 'tn-map topographic-map';
+                puzzlePieces.forEach(piece => {
+                    piece.classList.remove('geological', 'sedimentary', 'alluvial', 'crystalline', 'igneous', 'metamorphic');
+                });
+                isGeologicalView = false;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('locationBtn').addEventListener('click', getCurrentLocation);
+
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                toggleMapView(e.target.dataset.map);
+            });
+        });
+
+        // Puzzle piece click events
+        document.querySelectorAll('.puzzle-piece').forEach(piece => {
+            piece.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                const lat = parseFloat(this.dataset.lat);
+                const lng = parseFloat(this.dataset.lng);
+                const region = this.dataset.region;
+                
+                // Add revealed animation
+                this.classList.add('revealed');
+                setTimeout(() => this.classList.remove('revealed'), 600);
+                
+                // Get prediction for this region
+                const prediction = predictGroundwater(lat, lng);
+                displayPrediction(lat, lng, prediction);
+                
+                // Update piece color based on prediction
+                setTimeout(() => {
+                    this.classList.remove('high-water', 'medium-water', 'low-water');
+                    if (prediction.probability > 70) {
+                        this.classList.add('high-water');
+                    } else if (prediction.probability > 40) {
+                        this.classList.add('medium-water');
+                    } else {
+                        this.classList.add('low-water');
+                    }
+                }, 300);
+                
+                // Update prediction content with region name
+                setTimeout(() => {
+                    const predictionContent = document.getElementById('predictionContent');
+                    const currentContent = predictionContent.innerHTML;
+                    const regionInfo = `<div style="background: #e8f5e8; padding: 10px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4caf50;">
+                        <strong>🧩 Selected Region:</strong> ${region}
+                    </div>`;
+                    predictionContent.innerHTML = regionInfo + currentContent.substring(currentContent.indexOf('<div class="coordinates">'));
+                }, 100);
+            });
+        });
+
+        // Initialize puzzle pieces with random water indicators
+        function initializePuzzlePieces() {
+            const puzzlePieces = document.querySelectorAll('.puzzle-piece');
+            puzzlePieces.forEach(piece => {
+                const lat = parseFloat(piece.dataset.lat);
+                const lng = parseFloat(piece.dataset.lng);
+                const prediction = predictGroundwater(lat, lng);
+                
+                // Set initial color based on prediction
+                if (prediction.probability > 70) {
+                    piece.classList.add('high-water');
+                } else if (prediction.probability > 40) {
+                    piece.classList.add('medium-water');
+                } else {
+                    piece.classList.add('low-water');
+                }
+            });
+        }
+        
+        // Initialize on page load
+        initializePuzzlePieces();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'974c91b6f473aa6a',t:'MTc1NjE0MDQyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
